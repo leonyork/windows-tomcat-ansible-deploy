@@ -1,0 +1,11 @@
+aws-windows-host ansible_ssh_host=
+
+[windows]
+aws-windows-host
+
+[windows:vars]
+ansible_connection=winrm
+ansible_ssh_port=5986
+ansible_ssh_user=Administrator
+ansible_ssh_pass=
+ansible_winrm_server_cert_validation=ignore

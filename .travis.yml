@@ -1,0 +1,10 @@
+sudo: required
+language: minimal
+branches:
+  only:
+    - master
+services:
+  - docker
+script:
+  - make .test
+  - make .destroy
