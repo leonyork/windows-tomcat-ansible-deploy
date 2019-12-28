@@ -19,6 +19,9 @@ BUILD=docker-compose -f build.docker-compose.yml -p windows-tomcat-ansible-deplo
 .dev:
 	$(BUILD) run -p 8080:8080 build gradle bootRun --no-daemon
 
+.build:
+	$(BUILD) run -p 8080:8080 build gradle build --no-daemon
+
 # Test that the deployment work by pinging the server using ansible's winrm
 .test:
 	./update.sh -m win_ping

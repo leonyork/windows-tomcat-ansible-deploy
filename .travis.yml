@@ -5,8 +5,9 @@ branches:
     - master
 services:
   - docker
-before_install: 
+before_install:
   - sudo apt-get -y install make
 script:
   - make .test
   - make .destroy
+  - make .build
