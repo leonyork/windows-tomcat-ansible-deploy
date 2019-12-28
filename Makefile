@@ -1,9 +1,9 @@
 BUILD=docker-compose -f app-build.docker-compose.yml -p windows-tomcat-ansible-deploy-build run
 INFRA=docker-compose -f infra.docker-compose.yml -p windows-tomcat-ansible-deploy-infra run
-INFRA_DEPLOYMENT_OUTPUT=$(INFRA) --entrypoint 'terraform output --json' deploy
+INFRA_DEPLOYMENT_OUTPUT=$(INFRA) --entrypoint 'terraform output' deploy
 
-HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) | jq '.public_ip.value' -rj)
-PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) | jq '.password.value' -rj)
+HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) public_ip)
+PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) password)
 
 UPDATE=docker-compose -f app-deploy.docker-compose.yml -p windows-tomcat-ansible-deploy-update run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy 
 
