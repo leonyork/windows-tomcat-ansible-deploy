@@ -1,0 +1,37 @@
+# Deploys a webapp war to a Tomcat server
+
+- hosts: windows
+  tasks:
+    - name: Copy the war file windows-tomcat-ansible-deploy-0.0.1-SNAPSHOT.war as ROOT.war.tmp to C:\Tomcat\apache-tomcat-8.5.50\webapps
+      win_copy:
+        src: build/libs/windows-tomcat-ansible-deploy-0.0.1-SNAPSHOT.war
+        dest: "C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT.war.tmp"
+        force: yes
+
+    - name: Remove current war file C:\Tomcat\apache-tomcat-8.5.50\webapps\ROOT.war
+      win_file:
+        path: "C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT.war"
+        state: absent
+
+    - name: Wait until the webapp folder C:\Tomcat\apache-tomcat-8.5.50\webapps\ROOT.war is deleted
+      win_wait_for:
+        path: "C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT.war"
+        state: absent
+      register: folder_info
+
+    - name: Rename ROOT.war.tmp to ROOT.war
+      win_command: "cmd.exe /c rename C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT.war.tmp ROOT.war"
+      register: cmd_result
+
+    - name: Stop the Tomcat service
+      win_command: "cmd.exe /c tomcat8 stop"
+      register: cmd_result
+
+    - name: Remove current ROOT directory C:\Tomcat\apache-tomcat-8.5.50\webapps\ROOT
+      win_file:
+        path: "C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT"
+        state: absent
+
+    - name: Start the Tomcat service
+      win_command: "cmd.exe /c tomcat8 start"
+      register: cmd_result

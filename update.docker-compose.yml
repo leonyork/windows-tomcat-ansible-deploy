@@ -1,12 +1,12 @@
 version: '3.7'
 services:
   update:
-    build: 
+    build:
       context: .
       dockerfile: update.Dockerfile
       args:
         - "ALPINE_VERSION=${ALPINE_VERSION}" # From .env file
-    entrypoint: "ansible windows -i hosts --extra-vars \"ansible_ssh_host=${HOST} ansible_ssh_pass=${PASSWORD}\""
+    entrypoint: 'sh -c "$${0} \"$$@\" -i hosts --extra-vars \"ansible_ssh_host=$$HOST ansible_ssh_pass=$$PASSWORD\""'
     working_dir: /app
     volumes:
       - .:/app

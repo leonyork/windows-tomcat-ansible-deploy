@@ -8,6 +8,9 @@ services:
 before_install:
   - sudo apt-get -y install make
 script:
-  - make .test
-  - make .destroy
+  - make .deploy
+  - sleep 360 #Sleep so that Windows has time to come up and do installation. AWS recommends 4 mins, but that was too short
+  - make .deploy-test
   - make .build
+  - make .update
+  - make .destroy
