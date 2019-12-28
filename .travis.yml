@@ -9,4 +9,5 @@ before_install:
   - sudo apt-get -y install make
 script:
   - make .deploy
+after_script:
   - make .destroy

@@ -12,7 +12,7 @@ data "aws_ami" "windows" {
 
   filter {
     name   = "name"
-    values = ["Windows_Server-2016-English-Full-Base-2019*"]
+    values = ["Windows_Server-2016-English-Full-Base*"]
   }
 
   filter {
@@ -25,7 +25,7 @@ data "aws_ami" "windows" {
 
 resource "aws_instance" "windows" {
   ami           = data.aws_ami.windows.id
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
 
   connection {
     type = "winrm"
