@@ -1,5 +1,7 @@
 # Deploy Tomcat services to a Windows server
 
+[![Build Status](https://travis-ci.com/leonyork/windows-tomcat-ansible-deploy.svg?branch=master)](https://travis-ci.com/leonyork/windows-tomcat-ansible-deploy)
+
 Includes:
  - the [Terraform](https://www.terraform.io/) scripts to create the Windows server and security groups
  - the [Ansible](https://www.ansible.com/) configuration to connect
