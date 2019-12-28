@@ -1,0 +1,14 @@
+version: '3.7'
+services:
+  build:
+    image: gradle:${GRADLE_VERSION} # From .env file
+    working_dir: /home/gradle/app
+    volumes:
+    - .:/home/gradle/app
+    - gradle:/home/gradle/.gradle
+    - gradle-app:/home/gradle/app/.gradle
+volumes:
+  gradle:
+  gradle-app:
+
+    

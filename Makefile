@@ -1,3 +1,5 @@
+BUILD=docker-compose -f build.docker-compose.yml -p windows-tomcat-ansible-deploy-build
+
 # Deploy to AWS
 .deploy: 
 	docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy run deploy
@@ -13,6 +15,9 @@
 # get the output of the deployment as json (added the @ so we don't print the command we're running)
 .deploy-output:  
 	@docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy run --entrypoint 'terraform output --json' deploy
+
+.dev:
+	$(BUILD) run -p 8080:8080 build gradle bootRun --no-daemon
 
 # Test that the deployment work by pinging the server using ansible's winrm
 .test:
