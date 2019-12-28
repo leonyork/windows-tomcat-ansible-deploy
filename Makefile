@@ -1,7 +1,10 @@
-HOST = $(shell docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy run --entrypoint 'terraform output --json' deploy | jq '.public_ip.value' -rj)
-PASSWORD = $(shell docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy run --entrypoint 'terraform output --json' deploy | jq '.password.value' -rj)
 BUILD=docker-compose -f build.docker-compose.yml -p windows-tomcat-ansible-deploy-build
 DEPLOY=docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy
+DEPLOY_OUTPUT=$(DEPLOY) run --entrypoint 'terraform output --json' deploy
+
+HOST = $(shell $(DEPLOY_OUTPUT) | jq '.public_ip.value' -rj)
+PASSWORD = $(shell $(DEPLOY_OUTPUT) | jq '.password.value' -rj)
+
 UPDATE=docker-compose -f update.docker-compose.yml run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) update 
 
 # Deploy to AWS
