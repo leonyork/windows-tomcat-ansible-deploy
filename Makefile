@@ -20,10 +20,13 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 .infra-deploy-sh:  
 	$(INFRA) --entrypoint /bin/sh deploy
 
-# Wait for the deployment to complete - i.e. We can hit port 8080
-.infra-deploy-wait:
-	@docker run alpine:3.11.2 sh -c 'while ! nc -z $(HOST) 5986; do sleep 1; done; echo $(HOST):5986 available'  
-	@docker run alpine:3.11.2 sh -c 'while ! nc -z $(HOST) 8080; do sleep 1; done; echo $(HOST):8080 available'
+# Added for re-use across multiple ports - see below
+.infra-deploy-wait-%:
+	@echo Waiting for $(HOST):$* to become available...
+	@docker run alpine:3.11.2 sh -c 'while ! nc -z $(HOST) $*; do sleep 1; done; echo $(HOST):$* available'  
+
+# Wait for the deployment to complete - i.e. We can hit ports 5986 and 8080
+.infra-deploy-wait: .infra-deploy-wait-5986 .infra-deploy-wait-8080
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image
@@ -31,16 +34,12 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
 
 # Run the application in dev mode
-.app-dev:
+.app-bootRun:
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
 
-# Clean the build files
-.app-clean:
-	$(APP_BUILD) gradle clean
-
-# Build a war file
-.app-build:
-	$(APP_BUILD) gradle build
+# Perform a gradle task for the app (e.g. make .app-build runs gradle build)
+.app-%:
+	$(APP_BUILD) gradle $*
 
 # Build the app-deploy docker image (useful for if you change the Dockerfile)
 .app-deploy-build-image:
@@ -54,5 +53,5 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
 .deploy: .infra-deploy-test .app-deploy
 
-# Shortcut to destroy everything (just destroys the infrastructure)
+# Shortcut to destroy everything (i.e. the infrastructure)
 .destroy: .infra-destroy
