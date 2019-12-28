@@ -1,8 +1,11 @@
 version: '3.7'
 services:
-  build:
+  gradle:
     image: gradle:${GRADLE_VERSION} # From .env file
     working_dir: /home/gradle/app
+    entrypoint: 
+      - gradle 
+      - --no-daemon
     volumes:
     - .:/home/gradle/app
     - gradle:/home/gradle/.gradle
