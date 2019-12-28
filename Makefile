@@ -17,3 +17,4 @@
 # Test that the deployment work by pinging the server using ansible's winrm
 .test:
 	./update.sh -m win_ping
+	docker run --rm curlimages/curl:7.67.0 -L -m 5 -v http://$(docker-compose -f deploy.docker-compose.yml -p windows-tomcat-ansible-deploy run --entrypoint 'terraform output --json' deploy | jq '.public_ip.value' -rj):8080/
