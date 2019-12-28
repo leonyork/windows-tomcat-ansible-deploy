@@ -1,8 +1,11 @@
 provider "aws" {
-  region = "${var.region}"
+  region = var.region
 }
 
-resource "random_uuid" "password" { }
+resource "random_password" "password" {
+  length = 32
+  special = false
+}
 
 data "aws_ami" "windows" {
   most_recent = true
@@ -21,19 +24,19 @@ data "aws_ami" "windows" {
 }
 
 resource "aws_instance" "windows" {
-  ami           = "${data.aws_ami.windows.id}"
+  ami           = data.aws_ami.windows.id
   instance_type = "t2.micro"
 
   connection {
     type = "winrm"
     user = "Administrator"
-    password = "${random_uuid.password.result}"
+    password = random_password.password.result
   }
 
   user_data = <<EOF
 <powershell>
 # Set the administrator password
-net user Administrator "${random_uuid.password.result}"
+net user Administrator "${random_password.password.result}"
 # By default Windows uses TLS v1. We should use v1.2 (Note that some sites will not allow connections with v1)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 # Allow ansible access over winrm
