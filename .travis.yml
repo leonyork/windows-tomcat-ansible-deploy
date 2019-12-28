@@ -9,8 +9,4 @@ before_install:
   - sudo apt-get -y install make
 script:
   - make .deploy
-  - make .deploy-wait # Wait for the deployment to complete
-  - make .deploy-test
-  - make .build
-  - make .update
   - make .destroy

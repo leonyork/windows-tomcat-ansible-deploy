@@ -1,9 +1,9 @@
 version: '3.7'
 services:
-  update:
+  deploy:
     build:
       context: .
-      dockerfile: update.Dockerfile
+      dockerfile: app-deploy.Dockerfile
       args:
         - "ALPINE_VERSION=${ALPINE_VERSION}" # From .env file
     entrypoint: 'sh -c "$${0} \"$$@\" -i hosts --extra-vars \"ansible_ssh_host=$$HOST ansible_ssh_pass=$$PASSWORD\""'
