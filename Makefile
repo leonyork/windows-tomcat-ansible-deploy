@@ -16,9 +16,9 @@ UPDATE=docker-compose -f update.docker-compose.yml run -e HOST=$(HOST) -e PASSWO
 .deploy-sh:  
 	$(DEPLOY) run --entrypoint /bin/sh deploy
 
-# get the output of the deployment as json (added the @ so we don't print the command we're running)
-.deploy-output:  
-	@$(DEPLOY) run --entrypoint 'terraform output --json' deploy
+# Wait for the deployment to complete - i.e. We can hit port 8080
+.deploy-wait:  
+	@docker run alpine:3.11.2 sh -c 'while ! nc -z $(HOST) 8080; do sleep 1; done; echo $(HOST):8080 available'
 
 .dev:
 	$(BUILD) run -p 8080:8080 build gradle bootRun --no-daemon
