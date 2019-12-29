@@ -10,3 +10,5 @@ variable "java_version" {
 }
 variable "tomcat_version" {
 }
+variable "windows_version" {
+}

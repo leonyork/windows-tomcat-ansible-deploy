@@ -2,7 +2,7 @@ version: '3.7'
 services:
   deploy:
     image: hashicorp/terraform:${TERRAFORM_VERSION} # From .env file
-    entrypoint: 'sh -c ''terraform init -input=false && terraform $${0} "$$@" -var="java_version=${JAVA_VERSION}" -var="tomcat_version=${TOMCAT_VERSION}" -var="chocolatey_version=${CHOCOLATEY_VERSION}"'''
+    entrypoint: 'sh -c ''terraform init -input=false && terraform $${0} "$$@" -var="windows_version=${WINDOWS_VERSION}" -var="java_version=${JAVA_VERSION}" -var="tomcat_version=${TOMCAT_VERSION}" -var="chocolatey_version=${CHOCOLATEY_VERSION}"'''
     command: "apply -input=false -auto-approve"
     working_dir: /app
     environment:
