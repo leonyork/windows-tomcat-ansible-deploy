@@ -54,7 +54,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image
-	$(APP_DEPLOY) ansible windows -m win_ping
+	@$(APP_DEPLOY) ansible windows -m win_ping
 	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
 
 # Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
@@ -71,7 +71,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Update the server with the latest war file
 .app-deploy: .app-build .app-deploy-build-image
-	$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
+	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
 	@echo Visit http://$(HOST):8080/ to view updated application
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
