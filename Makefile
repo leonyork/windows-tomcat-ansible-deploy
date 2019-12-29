@@ -1,5 +1,9 @@
-APP_BUILD=docker-compose -f app-build.docker-compose.yml -p windows-tomcat-ansible-deploy-build run
-INFRA=docker-compose -f infra.docker-compose.yml -p windows-tomcat-ansible-deploy-infra run
+DOCKER_COMPOSE_APP_BUILD=docker-compose -f app-build.docker-compose.yml
+DOCKER_COMPOSE_APP_DEPLOY=docker-compose -f app-deploy.docker-compose.yml
+DOCKER_COMPOSE_INFRA=docker-compose -f infra.docker-compose.yml
+
+APP_BUILD=$(DOCKER_COMPOSE_APP_BUILD) -p windows-tomcat-ansible-deploy-build run
+INFRA=$(DOCKER_COMPOSE_INFRA) -p windows-tomcat-ansible-deploy-infra run
 INFRA_DEPLOYMENT_OUTPUT=$(INFRA) --entrypoint 'terraform output' deploy
 
 HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) public_ip)
@@ -9,19 +13,31 @@ PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) password)
 # So to get round this we do println in gradle and then pipe the result through head. 
 BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle printProjectAndVersion --no-daemon --console=plain -q | head -n 1')
 
-APP_DEPLOY_DOCKER=docker-compose -f app-deploy.docker-compose.yml -p windows-tomcat-ansible-deploy-update
+APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-update
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
 
+# Pull the Docker images required for infra
+.infra-pull:
+	$(DOCKER_COMPOSE_INFRA) pull --quiet
+
+# Pull the Docker images required for the app build
+.app-build-pull:
+	$(DOCKER_COMPOSE_APP_BUILD) pull --quiet
+
+# Build the app-deploy docker image (useful for if you change the Dockerfile)
+.app-deploy-build-image:
+	$(APP_DEPLOY_DOCKER) build
+
 # Deploy to AWS
-.infra-deploy: 
+.infra-deploy: .infra-pull
 	$(INFRA) deploy
 
 # Remove all the resources created by deploying the infrastructure
-.infra-destroy:
+.infra-destroy: .infra-pull
 	$(INFRA) deploy destroy -auto-approve -input=false -force
 
 # sh into the container - useful for running commands like import or plan
-.infra-deploy-sh:  
+.infra-deploy-sh: .infra-pull  
 	$(INFRA) --entrypoint /bin/sh deploy
 
 # Added for re-use across multiple ports - see below
@@ -38,27 +54,23 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
 
 # Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
-.infra-%:
+.infra-%: .infra-pull
 	@$(INFRA_DEPLOYMENT_OUTPUT) $*
 
 # Run the application in dev mode
-.app-bootRun:
+.app-bootRun: .app-build-pull
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
 
 # Perform a gradle task for the app (e.g. make .app-build runs gradle build). Runs with the -q (quiet) flag so output can be used
-.app-%:
+.app-%: .app-build-pull
 	@$(APP_BUILD) gradle $* -q
 
-# Build the app-deploy docker image (useful for if you change the Dockerfile)
-.app-deploy-build-image:
-	$(APP_DEPLOY_DOCKER) build
-
 # Update the server with the latest war file
-.app-deploy: # .app-build .app-deploy-build-image
+.app-deploy: .app-build .app-deploy-build-image
 	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT)"
 	@echo Visit http://$(HOST):8080/ to view updated application
 
-.log-build-artefact:
+.log-build-artefact: .app-build-pull
 	@echo $(BUILD_ARTEFACT)
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
