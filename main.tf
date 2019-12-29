@@ -2,6 +2,57 @@ provider "aws" {
   region = var.region
 }
 
+resource "random_uuid" "security_group_unique_id" { }
+
+resource "aws_security_group" "windows_tomcat" {
+  name        = "windows-tomcat-${random_uuid.security_group_unique_id.result}"
+  description = "Allow RDP, WinRM to Windows and port 8080 for Tomcat"
+  # Add to the default VPC for now - if required change to be a different VPC
+  #vpc_id      = "${aws_vpc.main.id}"
+
+  # Tomcat webserver
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
+    ipv6_cidr_blocks  = ["::/0"]
+  }
+
+  # WinRM
+  ingress {
+    from_port   = 5986
+    to_port     = 5986
+    protocol    = "tcp"
+    # Please restrict your ingress to only necessary IPs and ports.
+    # Opening to 0.0.0.0/0 can lead to security vulnerabilities.
+    cidr_blocks       = ["0.0.0.0/0"]
+    ipv6_cidr_blocks  = ["::/0"]
+  }
+
+  # RDP
+  # TODO: Ideally disable RDP and remove this ingress rule - however it's useful for testing/debugging
+  ingress {
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    # Please restrict your ingress to only necessary IPs and ports.
+    # Opening to 0.0.0.0/0 can lead to security vulnerabilities.
+    cidr_blocks       = ["0.0.0.0/0"]
+    ipv6_cidr_blocks  = ["::/0"]
+  }
+
+  # Currently need to allow egress to internet as we need to download java,tomcat, etc.
+  # TODO: Create an AMI separately and use it here, then disallow egress
+  egress {
+    from_port         = 0
+    to_port           = 0 #from_port (0) and to_port (65535) must both be 0 to use the 'ALL' "-1" protocol!
+    protocol          = "-1"
+    cidr_blocks       = ["0.0.0.0/0"]
+    ipv6_cidr_blocks  = ["::/0"]
+  }
+}
+
 resource "random_password" "password" {
   length = 32
   special = false
@@ -39,6 +90,7 @@ locals {
 resource "aws_instance" "windows" {
   ami           = data.aws_ami.windows.id
   instance_type = var.instance_type
+  security_groups = ["${aws_security_group.windows_tomcat.name}"]
 
   connection {
     type = "winrm"

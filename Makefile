@@ -55,7 +55,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image
 	@$(APP_DEPLOY) ansible windows -m win_ping
-	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
+	docker run --rm curlimages/curl:7.67.0 --write-out '%{http_code}' --silent --output -m 10 /dev/null http://$(HOST):8080/
 
 # Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
 .infra-%: .infra-pull
