@@ -7,7 +7,7 @@ services:
       - gradle 
       - --no-daemon
     environment: 
-      APP_VERSION: ${APP_VERSION}
+      WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION: ${WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION} # From .env file
     volumes:
     - .:/home/gradle/app
     - gradle:/home/gradle/.gradle

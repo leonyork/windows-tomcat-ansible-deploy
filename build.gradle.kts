@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.leonyork"
-version = System.getenv("APP_VERSION")?:"SNAPSHOT"
+version = System.getenv("WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION")?:"SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {

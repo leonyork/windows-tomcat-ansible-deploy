@@ -37,6 +37,10 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	@$(APP_DEPLOY) ansible windows -m win_ping
 	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
 
+# Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
+.infra-%:
+	@$(INFRA_DEPLOYMENT_OUTPUT) $*
+
 # Run the application in dev mode
 .app-bootRun:
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
@@ -54,11 +58,11 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT)"
 	@echo Visit http://$(HOST):8080/ to view updated application
 
+.log-build-artefact:
+	@echo $(BUILD_ARTEFACT)
+
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
 .deploy: .infra-deploy-test .app-deploy
 
 # Shortcut to destroy everything (i.e. the infrastructure)
 .destroy: .infra-destroy
-
-.test:
-	@echo $(BUILD_ARTEFACT)
