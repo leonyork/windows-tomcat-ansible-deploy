@@ -2,6 +2,10 @@ provider "aws" {
   region = var.region
 }
 
+data "http" "my_ip" {
+   url = "http://icanhazip.com/"
+}
+
 resource "random_uuid" "security_group_unique_id" { }
 
 resource "aws_security_group" "windows_tomcat" {
@@ -24,10 +28,7 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 5986
     to_port     = 5986
     protocol    = "tcp"
-    # Please restrict your ingress to only necessary IPs and ports.
-    # Opening to 0.0.0.0/0 can lead to security vulnerabilities.
-    cidr_blocks       = ["0.0.0.0/0"]
-    ipv6_cidr_blocks  = ["::/0"]
+    cidr_blocks  = ["${chomp(data.http.my_ip.body)}/32"]
   }
 
   # RDP
@@ -36,10 +37,7 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 3389
     to_port     = 3389
     protocol    = "tcp"
-    # Please restrict your ingress to only necessary IPs and ports.
-    # Opening to 0.0.0.0/0 can lead to security vulnerabilities.
-    cidr_blocks       = ["0.0.0.0/0"]
-    ipv6_cidr_blocks  = ["::/0"]
+    cidr_blocks = ["${chomp(data.http.my_ip.body)}/32"]
   }
 
   # Currently need to allow egress to internet as we need to download java,tomcat, etc.
