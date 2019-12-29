@@ -18,15 +18,15 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Pull the Docker images required for infra
 .infra-pull:
-	$(DOCKER_COMPOSE_INFRA) pull --quiet
+	@$(DOCKER_COMPOSE_INFRA) pull --quiet
 
 # Pull the Docker images required for the app build
 .app-build-pull:
-	$(DOCKER_COMPOSE_APP_BUILD) pull --quiet
+	@$(DOCKER_COMPOSE_APP_BUILD) pull --quiet
 
 # Build the app-deploy docker image (useful for if you change the Dockerfile)
 .app-deploy-build-image:
-	$(APP_DEPLOY_DOCKER) build
+	@$(APP_DEPLOY_DOCKER) build
 
 # Deploy to AWS
 .infra-deploy: .infra-pull
@@ -46,7 +46,8 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	@docker run alpine:3.11.2 sh -c 'while ! nc -z $(HOST) $*; do sleep 1; done; echo $(HOST):$* available'  
 
 # Wait for the deployment to complete - i.e. We can hit ports 5986 and 8080
-.infra-deploy-wait: .infra-deploy-wait-5986 .infra-deploy-wait-8080
+# Added the ; to ensure that we don't run .infra-%
+.infra-deploy-wait: .infra-deploy-wait-5986 .infra-deploy-wait-8080 ;
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image
@@ -57,7 +58,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 .infra-%: .infra-pull
 	@$(INFRA_DEPLOYMENT_OUTPUT) $*
 
-# Run the application in dev mode
+# Run the application in dev mode.
 .app-bootRun: .app-build-pull
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
 
