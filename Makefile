@@ -4,10 +4,13 @@ DOCKER_COMPOSE_INFRA=docker-compose -f infra.docker-compose.yml
 
 APP_BUILD=$(DOCKER_COMPOSE_APP_BUILD) -p windows-tomcat-ansible-deploy-build run
 INFRA=$(DOCKER_COMPOSE_INFRA) -p windows-tomcat-ansible-deploy-infra run
+# Added the sed as we need to escape backslashes - i.e. \ becomes \\. Due to the number of layers of escaping we end up with lots of backslashes!
 INFRA_DEPLOYMENT_OUTPUT=$(INFRA) --entrypoint 'terraform output' deploy
 
 HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) public_ip)
 PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) password)
+TOMCAT_LOCATION=$(shell $(INFRA_DEPLOYMENT_OUTPUT) tomcat_location)
+TOMCAT_EXECUTABLE=$(shell $(INFRA_DEPLOYMENT_OUTPUT) tomcat_executable)
 # Need to pass the result of this gradle task through head to get the first line (relies on gradle task doing a println not print).
 # If we just print from gradle then the following characters are added - \u001b[0m\u001b[?12l\u001b[?25h
 # So to get round this we do println in gradle and then pipe the result through head. 
@@ -51,7 +54,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image
-	@$(APP_DEPLOY) ansible windows -m win_ping
+	$(APP_DEPLOY) ansible windows -m win_ping
 	docker run --rm curlimages/curl:7.67.0 -L -m 10 -v http://$(HOST):8080/
 
 # Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
@@ -68,11 +71,8 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Update the server with the latest war file
 .app-deploy: .app-build .app-deploy-build-image
-	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT)"
+	$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
 	@echo Visit http://$(HOST):8080/ to view updated application
-
-.log-build-artefact: .app-build-pull
-	@echo $(BUILD_ARTEFACT)
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
 .deploy: .infra-deploy-test .app-deploy

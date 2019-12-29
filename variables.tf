@@ -4,3 +4,9 @@ variable "region" {
 variable "instance_type" {
   default = "t3a.medium"
 }
+variable "chocolatey_version" {
+}
+variable "java_version" {
+}
+variable "tomcat_version" {
+}

@@ -5,12 +5,8 @@ branches:
     - master
 services:
   - docker
-before_install:
-  - sudo apt-get -y install make
+install: make
 script:
-# Temporary logging for travis
-  - echo $WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION
-  - make .log-build-artefact 
   - make .deploy
 after_script:
   - make .destroy
