@@ -5,7 +5,10 @@ services:
       context: .
       dockerfile: app-deploy.Dockerfile
       args:
-        - "ALPINE_VERSION=${ALPINE_VERSION}" # From .env file
+        # From .env file
+        - "ALPINE_VERSION=${ALPINE_VERSION}"
+        - "PYWINRM_VERSION=${PYWINRM_VERSION}"
+        - "ANSIBLE_VERSION=${ANSIBLE_VERSION}"
     entrypoint: 'sh -c "$${0} \"$$@\" -i hosts --extra-vars \"ansible_ssh_host=$$HOST ansible_ssh_pass=$$PASSWORD\""'
     working_dir: /app
     volumes:
