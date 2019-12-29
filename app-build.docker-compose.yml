@@ -6,6 +6,8 @@ services:
     entrypoint: 
       - gradle 
       - --no-daemon
+    environment: 
+      APP_VERSION: ${APP_VERSION}
     volumes:
     - .:/home/gradle/app
     - gradle:/home/gradle/.gradle

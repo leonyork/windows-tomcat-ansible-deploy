@@ -2,9 +2,9 @@
 
 - hosts: windows
   tasks:
-    - name: Copy the war file windows-tomcat-ansible-deploy-0.0.1-SNAPSHOT.war as ROOT.war.tmp to C:\Tomcat\apache-tomcat-8.5.50\webapps
+    - name: Copy the war file {{ web_archive }} as ROOT.war.tmp to C:\Tomcat\apache-tomcat-8.5.50\webapps
       win_copy:
-        src: build/libs/windows-tomcat-ansible-deploy-0.0.1-SNAPSHOT.war
+        src: "{{ web_archive }}"
         dest: "C:\\Tomcat\\apache-tomcat-8.5.50\\webapps\\ROOT.war.tmp"
         force: yes
 

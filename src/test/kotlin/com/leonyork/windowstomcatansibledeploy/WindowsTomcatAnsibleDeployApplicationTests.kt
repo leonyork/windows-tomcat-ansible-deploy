@@ -21,4 +21,10 @@ class WindowsTomcatAnsibleDeployApplicationTests(@Autowired val restTemplate: Te
         assertThat(entity.statusCode).isEqualTo(OK)
         assertThat(parse(entity.body), sameOrBefore(now()))
     }
+
+	@Test
+    fun `Calling version returns status code 200`() {
+        val entity = restTemplate.getForEntity<String>("/version")
+        assertThat(entity.statusCode).isEqualTo(OK)
+    }
 }

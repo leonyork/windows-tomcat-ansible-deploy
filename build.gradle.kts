@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.leonyork"
-version = "0.0.1-SNAPSHOT"
+version = System.getenv("APP_VERSION")?:"SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
@@ -41,5 +41,11 @@ tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = "1.8"
+    }
+}
+
+tasks.register("printProjectAndVersion") { 
+    doLast { 
+        println("""build/libs/${rootProject.name}-${rootProject.version}.war""")
     }
 }

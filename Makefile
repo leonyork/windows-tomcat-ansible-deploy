@@ -4,6 +4,10 @@ INFRA_DEPLOYMENT_OUTPUT=$(INFRA) --entrypoint 'terraform output' deploy
 
 HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) public_ip)
 PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) password)
+# Need to pass the result of this gradle task through head to get the first line (relies on gradle task doing a println not print).
+# If we just print from gradle then the following characters are added - \u001b[0m\u001b[?12l\u001b[?25h
+# So to get round this we do println in gradle and then pipe the result through head. 
+BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle printProjectAndVersion --no-daemon --console=plain -q | head -n 1')
 
 APP_DEPLOY_DOCKER=docker-compose -f app-deploy.docker-compose.yml -p windows-tomcat-ansible-deploy-update
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
@@ -37,17 +41,17 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 .app-bootRun:
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
 
-# Perform a gradle task for the app (e.g. make .app-build runs gradle build)
+# Perform a gradle task for the app (e.g. make .app-build runs gradle build). Runs with the -q (quiet) flag so output can be used
 .app-%:
-	$(APP_BUILD) gradle $*
+	@$(APP_BUILD) gradle $* -q
 
 # Build the app-deploy docker image (useful for if you change the Dockerfile)
 .app-deploy-build-image:
 	$(APP_DEPLOY_DOCKER) build
 
 # Update the server with the latest war file
-.app-deploy: .app-build .app-deploy-build-image
-	@$(APP_DEPLOY) ansible-playbook update.yml
+.app-deploy: # .app-build .app-deploy-build-image
+	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT)"
 	@echo Visit http://$(HOST):8080/ to view updated application
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
@@ -55,3 +59,6 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Shortcut to destroy everything (i.e. the infrastructure)
 .destroy: .infra-destroy
+
+.test:
+	@echo $(BUILD_ARTEFACT)
