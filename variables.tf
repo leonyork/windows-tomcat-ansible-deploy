@@ -12,3 +12,6 @@ variable "tomcat_version" {
 }
 variable "windows_version" {
 }
+variable "winrm_rdp_access_cidr" {
+  default = "0.0.0.0/32"
+}

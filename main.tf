@@ -2,10 +2,6 @@ provider "aws" {
   region = var.region
 }
 
-data "http" "my_ip" {
-   url = "http://icanhazip.com/"
-}
-
 resource "random_uuid" "security_group_unique_id" { }
 
 resource "aws_security_group" "windows_tomcat" {
@@ -28,7 +24,7 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 5986
     to_port     = 5986
     protocol    = "tcp"
-    cidr_blocks  = ["${chomp(data.http.my_ip.body)}/32"]
+    cidr_blocks  = ["${var.winrm_rdp_access_cidr}"]
   }
 
   # RDP
@@ -37,7 +33,7 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 3389
     to_port     = 3389
     protocol    = "tcp"
-    cidr_blocks = ["${chomp(data.http.my_ip.body)}/32"]
+    cidr_blocks = ["${var.winrm_rdp_access_cidr}"]
   }
 
   # Currently need to allow egress to internet as we need to download java,tomcat, etc.

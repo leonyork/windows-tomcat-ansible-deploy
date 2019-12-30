@@ -6,8 +6,6 @@ branches:
 services:
   - docker
 before_install:
-  - wget -qO- http://checkip.amazonaws.com/
-  - wget -qO- http://icanhazip.com/
   - sudo apt-get -y install make
 script:
   - make .deploy
