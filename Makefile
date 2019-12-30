@@ -40,11 +40,11 @@ destroy: infra-destroy
 
 .PHONY: pull-alpine
 pull-alpine:
-	docker pull $(ALPINE_IMAGE)
+	@docker pull --quiet $(ALPINE_IMAGE)
 
 .PHONY: pull-curl
 pull-curl:
-	docker pull $(CURL_IMAGE)
+	@docker pull --quiet $(CURL_IMAGE)
 
 # Pull the Docker images required for infra
 .PHONY: infra-pull
