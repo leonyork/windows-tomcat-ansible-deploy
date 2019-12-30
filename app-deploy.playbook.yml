@@ -2,7 +2,7 @@
 
 - hosts: windows
   tasks:
-    - name: Wait until the tomcat webapps folder {{ tomcat_location }}\\webapps has been created
+    - name: Wait until the tomcat webapps folder {{ tomcat_location }}\webapps has been created
       win_wait_for:
         path: "{{ tomcat_location }}\\webapps"
         state: present
