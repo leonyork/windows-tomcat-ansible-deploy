@@ -81,6 +81,8 @@ locals {
   tomcat_executable = "tomcat${local.tomcat_major_version}"
 }
 
+# TODO: Remove all the default deployed wars (e.g. ROOT, Manager). Need to update tests that will expect 200 back from
+# curling 8080
 resource "aws_instance" "windows" {
   ami           = data.aws_ami.windows.id
   instance_type = var.instance_type

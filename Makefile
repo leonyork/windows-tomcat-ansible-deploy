@@ -28,10 +28,10 @@ APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
 
 .pull-alpine:
-	docker pull $(ALPINE_IMAGE)
+	docker pull $(ALPINE_IMAGE) --quiet
 
 .pull-curl:
-	docker pull $(CURL_IMAGE)
+	docker pull $(CURL_IMAGE) --quiet
 
 # Pull the Docker images required for infra
 .infra-pull:
@@ -48,6 +48,9 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 # Deploy to AWS
 .infra-deploy: .infra-pull .pull-curl
 	$(INFRA) deploy apply -input=false -auto-approve -var "winrm_rdp_access_cidr=$(MY_IP)/32"
+
+.infra-deploy-ignore-source-ip: .infra-pull .pull-curl
+	$(INFRA) deploy apply -input=false -auto-approve
 
 # Remove all the resources created by deploying the infrastructure
 .infra-destroy: .infra-pull
@@ -67,7 +70,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 .infra-deploy-wait: .infra-deploy-wait-5986 .infra-deploy-wait-8080 ;
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
-.infra-deploy-test: .infra-deploy .infra-deploy-wait .app-deploy-build-image .pull-curl
+.infra-deploy-test: .infra-deploy-wait .app-deploy-build-image .pull-curl
 	@$(APP_DEPLOY) ansible windows -m win_ping
 	$(CURL) --write-out '%{http_code}' --silent --output /dev/null -m 10 http://$(HOST):8080/
 
@@ -89,7 +92,11 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 	@echo Visit http://$(HOST):8080/ to view updated application
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
-.deploy: .infra-deploy-test .app-deploy
+.deploy: .infra-deploy .infra-deploy-test .app-deploy
+
+# Deploys the infrastructure and the application (including building the application). This also includes all tests.
+# However, ignores the source IP address for RDP/WinRM sessions - i.e. insecure as 0.0.0.0/0 can connect (but still require the password)
+.deploy-ignore-source-ip: .infra-deploy-ignore-source-ip .infra-deploy-test .app-deploy
 
 # Shortcut to destroy everything (i.e. the infrastructure)
 .destroy: .infra-destroy
