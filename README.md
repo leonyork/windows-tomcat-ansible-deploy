@@ -13,17 +13,17 @@ You'll need make, docker and docker-compose installed. You'll need an AWS accoun
 
 ### Deploy
 
-```make .infra-deploy```
+```make infra-deploy```
 
 This will create a Windows AWS instance with a random password.
 
 ### Destroy
 
-```make .infra-destroy```
+```make infra-destroy```
 
 ### Testing
 
-```make .infra-test```
+```make infra-test```
 
 ## Application
 
@@ -31,21 +31,21 @@ Responds to http requests with the date and time it was built
 
 ### Develop
 
-```make .app-dev```
+```make app-dev```
 
 ### Build
 
-```make .app-build```
+```make app-build```
 
 ### Deploy
 
-```make .app-deploy```
+```make app-deploy```
 
 ## All together
 
-Use ```make .deploy``` to create the infrastructure, build the app and deploy it.
+Use ```make deploy``` to create the infrastructure, build the app and deploy it.
 
-Use ```make .destroy``` to destroy everything.
+Use ```make destroy``` to destroy everything.
 
 
 

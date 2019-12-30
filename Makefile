@@ -27,79 +27,99 @@ BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle --no-daemo
 APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-update
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
 
-.pull-alpine:
+.PHONY: pull-alpine
+pull-alpine:
 	docker pull $(ALPINE_IMAGE)
 
-.pull-curl:
+.PHONY: pull-curl
+pull-curl:
 	docker pull $(CURL_IMAGE)
 
 # Pull the Docker images required for infra
-.infra-pull:
+.PHONY: infra-pull
+infra-pull:
 	@$(DOCKER_COMPOSE_INFRA) pull --quiet
 
 # Pull the Docker images required for the app build
-.app-build-pull:
+.PHONY: app-build-pull
+app-build-pull:
 	@$(DOCKER_COMPOSE_APP_BUILD) pull --quiet
 
 # Build the app-deploy docker image (useful for if you change the Dockerfile)
-.app-deploy-build-image:
+.PHONY: app-deploy-build-image
+app-deploy-build-image:
 	@$(APP_DEPLOY_DOCKER) build
 
 # Install all the dependencies - i.e. pull all images required and build all images. TODO: Also get gradle dependencies
-.install-dependencies: .pull-alpine .pull-curl .infra-pull .app-build-pull .app-deploy-build-image ;
+.PHONY: install-dependencies
+install-dependencies: pull-alpine pull-curl infra-pull app-build-pull app-deploy-build-image ;
 
 # Deploy to AWS
-.infra-deploy: .infra-pull .pull-curl
+.PHONY: infra-deploy
+infra-deploy: infra-pull pull-curl
 	$(INFRA) deploy apply -input=false -auto-approve -var "winrm_rdp_access_cidr=$(MY_IP)/32"
 
-.infra-deploy-ignore-source-ip: .infra-pull .pull-curl
+.PHONY: infra-deploy-ignore-source-ip
+infra-deploy-ignore-source-ip: infra-pull pull-curl
 	$(INFRA) deploy apply -input=false -auto-approve
 
 # Remove all the resources created by deploying the infrastructure
-.infra-destroy: .infra-pull
+.PHONY: infra-destroy
+infra-destroy: infra-pull
 	$(INFRA) deploy destroy -input=false -auto-approve -force
 
 # sh into the container - useful for running commands like import or plan
-.infra-deploy-sh: .infra-pull  
+.PHONY: infra-deploy-sh
+infra-deploy-sh: infra-pull  
 	$(INFRA) --entrypoint /bin/sh deploy
 
 # Added for re-use across multiple ports - see below
-.infra-deploy-wait-%: .pull-alpine
+.PHONY: infra-deploy-wait-%
+infra-deploy-wait-%: infra-deploy infra-deploy pull-alpine
 	@echo Waiting for $(HOST):$* to become available...
 	@$(ALPINE) sh -c 'while ! nc -z $(HOST) $*; do sleep 1; done; echo $(HOST):$* available'  
 
 # Wait for the deployment to complete - i.e. We can hit ports 5986 and 8080
 # Added the ; to ensure that we don't run .infra-%
-.infra-deploy-wait: .infra-deploy-wait-5986 .infra-deploy-wait-8080 ;
+.PHONY: infra-deploy-wait
+infra-deploy-wait: infra-deploy infra-deploy-wait-5986 infra-deploy-wait-8080 ;
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
-.infra-deploy-test: .infra-deploy-wait .app-deploy-build-image .pull-curl
+.PHONY: infra-deploy-test
+infra-deploy-test: infra-deploy-wait app-deploy-build-image pull-curl
 	@$(APP_DEPLOY) ansible windows -m win_ping
 	$(CURL) --write-out '%{http_code}' --silent --output /dev/null -m 10 http://$(HOST):8080/
 
 # Get the outputs from the infra deployment (e.g. make .infra-password gets the password to logon to the server)
-.infra-%: .infra-pull
+.PHONY: infra-%
+infra-%: infra-pull
 	@$(INFRA_DEPLOYMENT_OUTPUT) $*
 
 # Run the application in dev mode.
-.app-bootRun: .app-build-pull
+.PHONY: app-bootRun
+app-bootRun: app-build-pull
 	$(APP_BUILD) -p 8080:8080 gradle bootRun
 
 # Perform a gradle task for the app (e.g. make .app-build runs gradle build). Runs with the -q (quiet) flag so output can be used
-.app-%: .app-build-pull
+.PHONY: app-%
+app-%: app-build-pull
 	$(APP_BUILD) gradle --console=plain $*
 
 # Update the server with the latest war file
-.app-deploy: .app-build .app-deploy-build-image
+.PHONY: app-deploy
+app-deploy: infra-deploy-wait-5986 app-build app-deploy-build-image
 	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
 	@echo Visit http://$(HOST):8080/ to view updated application
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
-.deploy: .infra-deploy .infra-deploy-test .app-deploy
+.PHONY: deploy
+deploy: infra-deploy infra-deploy-test app-deploy
 
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
 # However, ignores the source IP address for RDP/WinRM sessions - i.e. insecure as 0.0.0.0/0 can connect (but still require the password)
-.deploy-ignore-source-ip: .infra-deploy-ignore-source-ip .infra-deploy-test .app-deploy
+.PHONY: deploy-ignore-source-ip
+deploy-ignore-source-ip: infra-deploy-ignore-source-ip infra-deploy-test app-deploy
 
 # Shortcut to destroy everything (i.e. the infrastructure)
-.destroy: .infra-destroy
+.PHONY: destroy
+destroy: infra-destroy

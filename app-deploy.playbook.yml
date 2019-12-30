@@ -2,6 +2,12 @@
 
 - hosts: windows
   tasks:
+    - name: Wait until the tomcat webapps folder {{ tomcat_location }}\\webapps has been created
+      win_wait_for:
+        path: "{{ tomcat_location }}\\webapps"
+        state: present
+      register: folder_info
+
     - name: Copy the war file {{ web_archive }} as ROOT.war.tmp to {{ tomcat_location }}\webapps
       win_copy:
         src: "{{ web_archive }}"
