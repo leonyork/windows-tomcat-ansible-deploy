@@ -1,5 +1,10 @@
 provider "aws" {
   region = var.region
+  version = "2.43"
+}
+
+provider "random" {
+  version = "2.2"
 }
 
 resource "random_uuid" "security_group_unique_id" { }
