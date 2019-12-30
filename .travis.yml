@@ -16,6 +16,6 @@ before_install:
 install:
   - make install-dependencies
 script:
-  - make deploy-ignore-source-ip
+  - make deploy
 after_script:
   - make destroy
