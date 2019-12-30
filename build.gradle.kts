@@ -9,8 +9,8 @@ plugins {
 }
 
 group = "com.leonyork"
-version = System.getenv("WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION")?:"SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+version = System.getenv("WINDOWS_TOMCAT_ANSIBLE_DEPLOY_VERSION") ?: "SNAPSHOT"
+java.sourceCompatibility = JavaVersion.VERSION_13
 
 repositories {
     mavenCentral()
@@ -40,12 +40,12 @@ tasks.withType<Test> {
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "1.8"
+        jvmTarget = "12"
     }
 }
 
-tasks.register("printProjectAndVersion") { 
-    doLast { 
+tasks.register("printProjectAndVersion") {
+    doLast {
         println("""build/libs/${rootProject.name}-${rootProject.version}.war""")
     }
 }
