@@ -18,7 +18,9 @@ HOST=$(shell $(INFRA_DEPLOYMENT_OUTPUT) public_ip)
 PASSWORD=$(shell $(INFRA_DEPLOYMENT_OUTPUT) password)
 TOMCAT_LOCATION=$(shell $(INFRA_DEPLOYMENT_OUTPUT) tomcat_location)
 TOMCAT_EXECUTABLE=$(shell $(INFRA_DEPLOYMENT_OUTPUT) tomcat_executable)
+
 MY_IP=$(shell $(CURL) -s $(CHECK_IP_URL))
+ACCESS_CIDR=$(MY_IP)/32
 # Need to pass the result of this gradle task through head to get the first line (relies on gradle task doing a println not print).
 # If we just print from gradle then the following characters are added - \u001b[0m\u001b[?12l\u001b[?25h
 # So to get round this we do println in gradle and then pipe the result through head. 
@@ -57,16 +59,12 @@ install-dependencies: pull-alpine pull-curl infra-pull app-build-pull app-deploy
 # Deploy to AWS
 .PHONY: infra-deploy
 infra-deploy: infra-pull pull-curl
-	$(INFRA) deploy apply -input=false -auto-approve -var "winrm_rdp_access_cidr=$(MY_IP)/32"
-
-.PHONY: infra-deploy-ignore-source-ip
-infra-deploy-ignore-source-ip: infra-pull pull-curl
-	$(INFRA) deploy apply -input=false -auto-approve
+	$(INFRA) deploy apply -input=false -auto-approve -var "winrm_rdp_access_cidr=$(ACCESS_CIDR)"
 
 # Remove all the resources created by deploying the infrastructure
 .PHONY: infra-destroy
 infra-destroy: infra-pull
-	$(INFRA) deploy destroy -input=false -auto-approve -force
+	$(INFRA) deploy destroy -input=false -auto-approve -force -var "winrm_rdp_access_cidr=$(ACCESS_CIDR)"
 
 # sh into the container - useful for running commands like import or plan
 .PHONY: infra-deploy-sh
@@ -114,11 +112,6 @@ app-deploy: infra-deploy-wait-5986 app-build app-deploy-build-image
 # Deploys the infrastructure and the application (including building the application). This also includes all tests.
 .PHONY: deploy
 deploy: infra-deploy infra-deploy-test app-deploy
-
-# Deploys the infrastructure and the application (including building the application). This also includes all tests.
-# However, ignores the source IP address for RDP/WinRM sessions - i.e. insecure as 0.0.0.0/0 can connect (but still require the password)
-.PHONY: deploy-ignore-source-ip
-deploy-ignore-source-ip: infra-deploy-ignore-source-ip infra-deploy-test app-deploy
 
 # Shortcut to destroy everything (i.e. the infrastructure)
 .PHONY: destroy
