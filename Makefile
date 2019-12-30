@@ -22,7 +22,7 @@ MY_IP=$(shell $(CURL) -s $(CHECK_IP_URL))
 # Need to pass the result of this gradle task through head to get the first line (relies on gradle task doing a println not print).
 # If we just print from gradle then the following characters are added - \u001b[0m\u001b[?12l\u001b[?25h
 # So to get round this we do println in gradle and then pipe the result through head. 
-BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle printProjectAndVersion --no-daemon --console=plain -q | head -n 1')
+BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle --no-daemon --console=plain -q printProjectAndVersion | head -n 1')
 
 APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-update
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
@@ -44,6 +44,9 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 # Build the app-deploy docker image (useful for if you change the Dockerfile)
 .app-deploy-build-image:
 	@$(APP_DEPLOY_DOCKER) build
+
+# Install all the dependencies - i.e. pull all images required and build all images. TODO: Also get gradle dependencies
+.install-dependencies: .pull-alpine .pull-curl .infra-pull .app-build-pull .app-deploy-build-image ;
 
 # Deploy to AWS
 .infra-deploy: .infra-pull .pull-curl
@@ -84,7 +87,7 @@ APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) depl
 
 # Perform a gradle task for the app (e.g. make .app-build runs gradle build). Runs with the -q (quiet) flag so output can be used
 .app-%: .app-build-pull
-	@$(APP_BUILD) gradle $* -q
+	$(APP_BUILD) gradle --console=plain $*
 
 # Update the server with the latest war file
 .app-deploy: .app-build .app-deploy-build-image
