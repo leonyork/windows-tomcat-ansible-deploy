@@ -29,6 +29,15 @@ BUILD_ARTEFACT=$(shell $(APP_BUILD) --entrypoint sh gradle -c 'gradle --no-daemo
 APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-update
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
 
+# Deploys the infrastructure and the application (including building the application). This also includes all tests.
+# Keep this as the top so that running 'make' does the whole deploy.
+.PHONY: deploy
+deploy: infra-deploy infra-deploy-test app-deploy
+
+# Shortcut to destroy everything (i.e. the infrastructure)
+.PHONY: destroy
+destroy: infra-destroy
+
 .PHONY: pull-alpine
 pull-alpine:
 	docker pull $(ALPINE_IMAGE)
@@ -108,11 +117,3 @@ app-%: app-build-pull
 app-deploy: infra-deploy-wait-5986 app-build app-deploy-build-image
 	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
 	@echo Visit http://$(HOST):8080/ to view updated application
-
-# Deploys the infrastructure and the application (including building the application). This also includes all tests.
-.PHONY: deploy
-deploy: infra-deploy infra-deploy-test app-deploy
-
-# Shortcut to destroy everything (i.e. the infrastructure)
-.PHONY: destroy
-destroy: infra-destroy
