@@ -28,10 +28,10 @@ APP_DEPLOY_DOCKER=$(DOCKER_COMPOSE_APP_DEPLOY) -p windows-tomcat-ansible-deploy-
 APP_DEPLOY=$(APP_DEPLOY_DOCKER) run -e HOST=$(HOST) -e PASSWORD=$(PASSWORD) deploy
 
 .pull-alpine:
-	docker pull --quiet $(ALPINE_IMAGE)
+	docker pull $(ALPINE_IMAGE)
 
 .pull-curl:
-	docker pull --quiet $(CURL_IMAGE)
+	docker pull $(CURL_IMAGE)
 
 # Pull the Docker images required for infra
 .infra-pull:
