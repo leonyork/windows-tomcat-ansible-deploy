@@ -56,14 +56,14 @@ infra-pull:
 app-build-pull:
 	@$(DOCKER_COMPOSE_APP_BUILD) pull --quiet
 
-# Build the app-deploy docker image (useful for if you change the Dockerfile)
-.PHONY: app-deploy-build-image
-app-deploy-build-image:
-	@$(APP_DEPLOY_DOCKER) build
+# Pull the app-deploy docker image
+.PHONY: app-deploy-pull
+app-deploy-pull:
+	@$(DOCKER_COMPOSE_APP_DEPLOY) pull --quiet
 
-# Install all the dependencies - i.e. pull all images required and build all images. TODO: Also get gradle dependencies
+# Install all the dependencies - i.e. pull all images required. TODO: Also get gradle dependencies
 .PHONY: install-dependencies
-install-dependencies: pull-alpine pull-curl infra-pull app-build-pull app-deploy-build-image ;
+install-dependencies: pull-alpine pull-curl infra-pull app-build-pull app-deploy-pull ;
 
 # Deploy to AWS
 .PHONY: infra-deploy
@@ -93,7 +93,7 @@ infra-deploy-wait: infra-deploy infra-deploy-wait-5986 infra-deploy-wait-8080 ;
 
 # Test that the deployment work by pinging the server using ansible's winrm and also checks that Tomcat was installed by hitting port 8080
 .PHONY: infra-deploy-test
-infra-deploy-test: infra-deploy-wait app-deploy-build-image pull-curl
+infra-deploy-test: infra-deploy-wait app-deploy-pull pull-curl
 	@$(APP_DEPLOY) ansible windows -m win_ping
 	$(CURL) --write-out '%{http_code}' --silent --output /dev/null -m 10 http://$(HOST):8080/
 
@@ -114,6 +114,6 @@ app-%: app-build-pull
 
 # Update the server with the latest war file
 .PHONY: app-deploy
-app-deploy: infra-deploy-wait-5986 app-build app-deploy-build-image
+app-deploy: infra-deploy-wait-5986 app-build app-deploy-pull
 	@$(APP_DEPLOY) ansible-playbook app-deploy.playbook.yml --extra-vars "web_archive=$(BUILD_ARTEFACT) tomcat_location=$(subst \,\\\\,$(TOMCAT_LOCATION)) tomcat_executable=$(TOMCAT_EXECUTABLE)"
 	@echo Visit http://$(HOST):8080/ to view updated application
