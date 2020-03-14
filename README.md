@@ -9,7 +9,7 @@ Includes:
 
 ## Infrastructure
 
-You'll need make, docker and docker-compose installed. You'll need an AWS account with the environment variables ```AWS_SECRET_KEY_ID``` and ```AWS_SECRET_ACCESS_KEY``` set.
+You'll need make, docker and docker-compose installed. You'll need an AWS account with the environment variables ```AWS_ACCESS_KEY_ID``` and ```AWS_SECRET_ACCESS_KEY``` set.
 
 ### Deploy
 

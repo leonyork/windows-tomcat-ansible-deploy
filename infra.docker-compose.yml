@@ -10,8 +10,8 @@ services:
         -var="chocolatey_version=${CHOCOLATEY_VERSION}"'
     working_dir: /app
     environment:
-      - AWS_SECRET_KEY_ID=${AWS_SECRET_KEY_ID?You must set the environment variable AWS_SECRET_KEY_ID}
-      - AWS_ACCESS_KEY_ID=${AWS_SECRET_KEY_ID}
+      - AWS_SECRET_KEY_ID=${AWS_ACCESS_KEY_ID?You must set the environment variable AWS_ACCESS_KEY_ID}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY?You must set the environment variable AWS_SECRET_ACCESS_KEY}
     volumes:
       - .:/app
