@@ -127,7 +127,7 @@ refreshenv
 # Download Tomcat - Unable to install using choco at the minute
 $version='${var.tomcat_version}'
 $major_version='${local.tomcat_major_version}'
-Invoke-WebRequest -Uri http://mirrors.ukfast.co.uk/sites/ftp.apache.org/tomcat/tomcat-$${major_version}/v$${version}/bin/apache-tomcat-$${version}-windows-x64.zip -OutFile tomcat.zip
+Invoke-WebRequest -Uri https://www.mirrorservice.org/sites/ftp.apache.org/tomcat/tomcat-$${major_version}/v$${version}/bin/apache-tomcat-$${version}-windows-x64.zip -OutFile tomcat.zip
 Expand-Archive -LiteralPath .\tomcat.zip -DestinationPath C:\
 Remove-Item -path .\tomcat.zip
 
