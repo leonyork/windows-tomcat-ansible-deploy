@@ -1,13 +1,26 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      # https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+      version = "3.14.1"
+    }
+    random = {
+      source = "hashicorp/random"
+      # https://registry.terraform.io/providers/hashicorp/random/latest
+      version = "3.0.0"
+    }
+  }
+}
+
 provider "aws" {
   region = var.region
-  version = "2.43"
 }
 
 provider "random" {
-  version = "2.2"
 }
 
-resource "random_uuid" "security_group_unique_id" { }
+resource "random_uuid" "security_group_unique_id" {}
 
 resource "aws_security_group" "windows_tomcat" {
   name        = "windows-tomcat-${random_uuid.security_group_unique_id.result}"
@@ -17,11 +30,11 @@ resource "aws_security_group" "windows_tomcat" {
 
   # Tomcat webserver
   ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks       = ["0.0.0.0/0"]
-    ipv6_cidr_blocks  = ["::/0"]
+    from_port        = 8080
+    to_port          = 8080
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   # WinRM
@@ -29,7 +42,7 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 5986
     to_port     = 5986
     protocol    = "tcp"
-    cidr_blocks  = ["${var.winrm_rdp_access_cidr}"]
+    cidr_blocks = [var.winrm_rdp_access_cidr]
   }
 
   # RDP
@@ -38,22 +51,22 @@ resource "aws_security_group" "windows_tomcat" {
     from_port   = 3389
     to_port     = 3389
     protocol    = "tcp"
-    cidr_blocks = ["${var.winrm_rdp_access_cidr}"]
+    cidr_blocks = [var.winrm_rdp_access_cidr]
   }
 
   # Currently need to allow egress to internet as we need to download java,tomcat, etc.
   # TODO: Create an AMI separately and use it here, then disallow egress
   egress {
-    from_port         = 0
-    to_port           = 0 #from_port (0) and to_port (65535) must both be 0 to use the 'ALL' "-1" protocol!
-    protocol          = "-1"
-    cidr_blocks       = ["0.0.0.0/0"]
-    ipv6_cidr_blocks  = ["::/0"]
+    from_port        = 0
+    to_port          = 0 #from_port (0) and to_port (65535) must both be 0 to use the 'ALL' "-1" protocol!
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
 resource "random_password" "password" {
-  length = 32
+  length  = 32
   special = false
 }
 
@@ -82,20 +95,20 @@ data "aws_ami" "windows" {
 # them and use the later 
 locals {
   tomcat_major_version = regex("^\\d+", var.tomcat_version)
-  tomcat_location = "C:\\apache-tomcat-${var.tomcat_version}"
-  tomcat_executable = "tomcat${local.tomcat_major_version}"
+  tomcat_location      = "C:\\apache-tomcat-${var.tomcat_version}"
+  tomcat_executable    = "tomcat${local.tomcat_major_version}"
 }
 
 # TODO: Remove all the default deployed wars (e.g. ROOT, Manager). Need to update tests that will expect 200 back from
 # curling 8080
 resource "aws_instance" "windows" {
-  ami           = data.aws_ami.windows.id
-  instance_type = var.instance_type
-  security_groups = ["${aws_security_group.windows_tomcat.name}"]
+  ami             = data.aws_ami.windows.id
+  instance_type   = var.instance_type
+  security_groups = [aws_security_group.windows_tomcat.name]
 
   connection {
-    type = "winrm"
-    user = "Administrator"
+    type     = "winrm"
+    user     = "Administrator"
     password = random_password.password.result
   }
 
@@ -121,7 +134,7 @@ $version='${var.java_version}'
 # Get the major version number
 $version -match '^(\d+)+'
 $major_version=$matches[0]
-choco install openjdk$major_version --version $version -y
+choco install openjdk --version $version -y
 refreshenv
 
 # Download Tomcat - Unable to install using choco at the minute
